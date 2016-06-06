@@ -1,6 +1,7 @@
 package io.github.hamsters.twitter
 
 import com.twitter.util.Future
+import org.scalactic._
 
 import scala.concurrent.ExecutionContext
 
@@ -31,9 +32,9 @@ case class FutureEither[L, +R](future: Future[Either[L, R]]) extends AnyVal {
 
   def map[R2](f: R => R2)(implicit ec: ExecutionContext): FutureEither[L, R2] = FutureEither(future.map(_.right map f))
 
-  def filter(p: (R) ⇒ Boolean)(implicit ec: ExecutionContext): FutureEither[String, R] = filterWith(p)(ec)
+  def filter(p: (R) ⇒ Boolean)(implicit ec: ExecutionContext): FutureEither[String, R] = withFilter(p)(ec)
 
-  def filterWith(p: (R) ⇒ Boolean)(implicit ec: ExecutionContext): FutureEither[String, R] =
+  def withFilter(p: (R) ⇒ Boolean)(implicit ec: ExecutionContext): FutureEither[String, R] =
     FutureEither(future.map {
       case Right(r) => if(p(r)) Right(r) else Left("No value matching predicate")
       case _ => Left("No value matching predicate")
@@ -45,5 +46,30 @@ case class FutureEither[L, +R](future: Future[Either[L, R]]) extends AnyVal {
       case _ => Left(default)
     })
 }
+
+case class FutureOr[+G, B](future: Future[G Or B]) extends AnyVal {
+  def flatMap[G2](f: G => FutureOr[G2, B])(implicit ec: ExecutionContext): FutureOr[G2, B] = 
+    FutureOr(future.flatMap {
+      case Good(g) => f(g).future
+      case Bad(b)  => Future(Bad(b))
+    })
+
+  def map[G2](f: G => G2)(implicit ec: ExecutionContext): FutureOr[G2, B] = 
+    FutureOr(future.map {
+      case Good(g) => Good(f(g))
+      case Bad(b)  => Bad(b)
+    })
+
+  def filter(p: (G) => Boolean)(implicit ec: ExecutionContext): FutureOr[G, Error] = withFilter(p)(ec)
+
+  def withFilter(p: (G) => Boolean)(implicit ec: ExecutionContext): FutureOr[G, Error] = {
+    FutureOr(future.map {
+      case Good(g) => if (p(g)) Good(g) else Bad(Error("No value matching predicate"))
+      case Bad(b)  => Bad(Error("No value matching predicate"))
+    })
+  }
+}
+
+case class Error(value: String) extends AnyVal
 
 
