@@ -4,8 +4,10 @@ import java.util.concurrent.TimeUnit
 
 import com.twitter.util._
 import org.scalatest._
+import org.scalactic._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+
 class MonadTransformersSpec extends FreeSpec with Matchers {
 
   "twitter.FutureOption" - {
@@ -85,21 +87,21 @@ class MonadTransformersSpec extends FreeSpec with Matchers {
         def feb(a: Int): Future[Either[String, Int]] = Future(Right(a + 2))
 
         val composedAB: Future[Either[String, Int]] = (for {
-          a <- FutureEither(fea)
+           a <- FutureEither(fea)
           ab <- FutureEither(feb(a))
         } yield ab).future
 
         Await.result(composedAB, Duration(1, TimeUnit.SECONDS)) shouldBe Right(3)
 
         val composedABWithNone: Future[Either[String, Int]] = (for {
-          a <- FutureEither(Future.value(Left("d'oh!")))
+           a <- FutureEither(Future.value(Left("d'oh!")))
           ab <- FutureEither(feb(a))
         } yield ab).future
 
         Await.result(composedABWithNone, Duration(1, TimeUnit.SECONDS)) shouldBe Left("d'oh!")
 
         val composedABWithFailure: Future[Either[String, Int]] = (for {
-          a <- FutureEither(Future.exception(new Exception("d'oh!")))
+           a <- FutureEither(Future.exception(new Exception("d'oh!")))
           ab <- FutureEither(feb(a))
         } yield ab).future
 
@@ -143,6 +145,69 @@ class MonadTransformersSpec extends FreeSpec with Matchers {
 
         Await.result(filteredWithNone, Duration(1, TimeUnit.SECONDS)) shouldBe Left("No value matching predicate")
       }
+    }
+  }
+
+  "twitter.FutureOr" - {
+    "for comprehension composition" - {
+      "should handle com.twitter.util.Future[Or[_,_]] type" in {
+        val fora: Future[String Or Int] = Future(Good("This is"))
+        val forb: Future[String Or Int] = Future(Good("good!"))
+
+        val composedAB: Future[String Or Int] = (for {
+             a <- FutureOr(fora)
+            ab <- FutureOr(forb)
+        } yield s"$a $ab").future
+
+        Await.result(composedAB, Duration(1, TimeUnit.SECONDS)) shouldBe Good("This is good!")
+
+        val composedABWithNone: Future[String Or Int] = (for {
+             a <- FutureOr(Future(Bad(0)))
+            ab <- FutureOr(forb)
+        } yield s"$a $ab").future
+
+        Await.result(composedABWithNone, Duration(1, TimeUnit.SECONDS)) shouldBe Bad(0)
+
+        val composedABWithFailure: Future[String Or Int] = (for {
+           a <- FutureOr(Future.exception(new Exception("d'oh!")))
+          ab <- FutureOr(forb)
+        } yield s"$a $ab").future
+
+        an[Exception] should be thrownBy Await.result(composedABWithFailure, Duration(1, TimeUnit.SECONDS))
+      }
+    }
+
+    "filter" - {
+      val fora: Future[(String, Int) Or Int] = Future(Good("This is a good number!" -> 10))
+      val forb: Future[(String, Int) Or Int] = Future(Bad(5))
+
+      "should be filtered with pattern matching" in {
+        val filtered = FutureOr(fora).filter { case (_, i) => i > 5 }.map(_._1).future
+
+        Await.result(filtered, Duration(1, TimeUnit.SECONDS)) shouldBe Good("This is a good number!")
+
+        val filtered2 = FutureOr(fora).filter { case (_, i) => i > 20 }.map(_._2).future
+
+        Await.result(filtered2, Duration(1, TimeUnit.SECONDS)) shouldBe Bad(Error("No value matching predicate"))
+
+        val filteredWithNone = FutureOr(forb).filter { case (_, i) => i > 5 }.map(_._2).future
+
+        Await.result(filteredWithNone, Duration(1, TimeUnit.SECONDS)) shouldBe Bad(Error("No value matching predicate"))
+      }
+
+      "should be filtered with pattern matching in for comprehension" in {
+        val filtered = (for {
+          (a, i) <- FutureOr(fora) if i > 5
+        } yield a).future
+
+        Await.result(filtered, Duration(1, TimeUnit.SECONDS)) shouldBe Good("This is a good number!")
+
+        val filtered2 = (for {
+          (a, i) <- FutureOr(fora) if i > 50
+        } yield a).future
+
+        Await.result(filtered2, Duration(1, TimeUnit.SECONDS)) shouldBe Bad(Error("No value matching predicate"))
+      } 
     }
   }
 }
