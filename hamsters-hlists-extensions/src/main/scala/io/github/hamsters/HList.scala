@@ -1,6 +1,6 @@
 package io.github.hamsters
 
-import scala.annotation.{implicitNotFound, tailrec}
+import scala.annotation.implicitNotFound
 
 object HListExtensions {
   implicit class HConsWithSelector[T, U <:HList](hCons: HCons[T, U]) {
