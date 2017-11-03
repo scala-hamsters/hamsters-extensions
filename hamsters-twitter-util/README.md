@@ -1,8 +1,7 @@
 # Hamsters Extentions - Hamsters Twitter Util
 A micro Scala utility library [Hamsters](https://github.com/scala-hamsters/hamsters) with [Twitter util](https://github.com/twitter/util). Compatible with functional programming beginners :)
 
-![hamster picture](http://loicdescotte.github.io/images/hamster.jpg)
-![twitter picture](https://avatars1.githubusercontent.com/u/50278?v=3&s=300)
+<img src="https://img4.hostingpics.net/pics/987051hamsters.jpg" alt="hamster logo" width="150px"/> <img src="https://avatars1.githubusercontent.com/u/50278?v=3&s=300" alt="twitter picture" width="150px"/>
 
 ##  Simple monad transformers with [Twitter Future](https://github.com/twitter/util/blob/master/util-core/src/main/scala/com/twitter/util/Future.scala)
 
