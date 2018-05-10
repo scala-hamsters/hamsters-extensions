@@ -15,13 +15,13 @@ trait Selector[L <: HList, O] {
 
 object Selector {
 
-  def apply[L <: HList, O](implicit selector: Selector[L, O]) = selector
+  def apply[L <: HList, O](implicit selector: Selector[L, O]): Selector[L, O] = selector
 
-  implicit def select[H, T <: HList] = new Selector[HCons[H, T], H] {
+  implicit def select[H, T <: HList]: Selector[HCons[H, T], H] = new Selector[HCons[H, T], H] {
     override def apply(l: HCons[H, T]): H = l.head
   }
 
-  implicit def recurse[H, T <: HList, O](implicit st : Selector[T, O]) = new Selector[HCons[H, T], O] {
+  implicit def recurse[H, T <: HList, O](implicit st : Selector[T, O]): Selector[HCons[H, T], O] = new Selector[HCons[H, T], O] {
     override def apply(l: HCons[H, T]): O = st.apply(l.tail)
   }
 
