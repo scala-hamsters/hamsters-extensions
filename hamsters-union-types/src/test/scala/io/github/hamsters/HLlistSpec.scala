@@ -1,10 +1,10 @@
-package io.github.hamsters
-
 import io.github.hamsters.{HList, HCons, HNil, HListExtensions}
 import HListExtensions._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.mutable.ListBuffer
+
+package io.github.hamsters
 
 import org.scalatest.{FlatSpec, Matchers}
 

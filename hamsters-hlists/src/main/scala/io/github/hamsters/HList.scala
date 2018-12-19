@@ -1,9 +1,6 @@
 package io.github.hamsters
 
 import scala.annotation.implicitNotFound
-
-package io.github.hamsters
-
 import scala.reflect.ClassTag
 
 sealed trait HList {
@@ -278,7 +275,6 @@ object HList {
   }
 
 }
-
 
 object HListExtensions {
   implicit class HConsWithSelector[T, U <:HList](hCons: HCons[T, U]) {
